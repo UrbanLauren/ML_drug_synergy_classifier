@@ -36,13 +36,15 @@ def convert_aa_seq_to_smiles(df, col_name_aa_seq):
     return df
 
 
-def convert_smiles_to_sdf(input_file, output_sdf_file):
+def convert_smiles_to_sdf(input_file, output_sdf_filename):
     try:
         PandasTools.AddMoleculeColumnToFrame(input_file, smilesCol='smiles', molCol='SDF')
-        PandasTools.WriteSDF(input_file, output_sdf_file, molColName='SDF', idName = 'ID', properties=None)
-        print(f"file with SDF column saved here {output_sdf_file}")
+        sdf_file = input_file[['ID', 'NAME', 'SEQUENCE', 'smiles', 'SDF']].drop_duplicates(subset=['SEQUENCE'])
+        PandasTools.WriteSDF(sdf_file, output_sdf_filename, molColName='SDF', idName = 'ID', properties=None)
+        print(f"file with SDF column saved here {output_sdf_filename}")
     except:
         print("Error in converting, check smiles and ID column names in input_file")
+    return sdf_file
     
     
 # Write outputs of molecular conversion to file (string type)
@@ -92,14 +94,6 @@ def sdf_to_smiles(sdf):
     if not obConversion.ReadString(mol, sdf):
         raise InputError
     return obConversion.WriteString(mol)
-
-
-def sdf_to_sdf(sdf):
-    return smiles_to_sdf(sdf_to_smiles(sdf))
-
-
-def smiles_to_smiles(smiles):
-    return sdf_to_smiles(smiles_to_sdf(smiles))
 
 
 def batch_smiles_to_sdf(smiles):

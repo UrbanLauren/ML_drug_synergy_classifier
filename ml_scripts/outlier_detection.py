@@ -154,7 +154,7 @@ def OutLiersBox(df, nameOfFeature):
     plt.show()
     
     
-    class PlotBoxR(object):
+class PlotBoxR(object):
     def __Trace(self,nameOfFeature,value): 
         trace = go.Box(
             y=value,
