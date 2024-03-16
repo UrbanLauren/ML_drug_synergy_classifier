@@ -1,16 +1,17 @@
 
-# Written by Lauren Urban
 # Import packages
 import pandas as pd
-import plotly.io as pio
-import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 from sklearn.model_selection import (train_test_split, LeaveOneGroupOut, LeaveOneOut, RepeatedKFold,
                                      ShuffleSplit, LeavePOut, cross_validate, cross_val_score,
                                      cross_val_predict)
-from sklearn.metrics import (roc_auc_score, precision_recall_curve, roc_curve, PrecisionRecallDisplay)
+from sklearn.metrics import (accuracy_score, f1_score, jaccard_score, matthews_corrcoef, 
+    precision_score, recall_score, roc_curve, precision_recall_curve,
+    brier_score_loss, log_loss, hamming_loss, hinge_loss, zero_one_loss, 
+    roc_auc_score, average_precision_score, make_scorer, PrecisionRecallDisplay)
 
+# Define variables
 cv = RepeatedKFold(n_splits=3)
 fig = go.Figure() # or any Plotly Express function e.g. px.bar(...)
 
@@ -24,6 +25,7 @@ def cross_val_predict_proba_fun(classifier, X, y):
         print("y_preds_both", y_preds_both)
     except (IOError, ValueError):
         print("An I/O error or a ValueError occurred")
+    return y_preds_both
          
          
 def plot_roc(y_true, y_score, label_name, ax):
@@ -44,3 +46,42 @@ def precision_recall(y_true, y_predic_proba, label_name, ax):
     ax.set_ylabel('Precision')
     ax.set_xlabel('Recall')
     ax.set_title(f"{label_name}: AUC = {roc_auc_score(y_true, y_score):.4f}", fontsize=10)
+    
+    
+def perf_measure(y_actual, y_hat):
+    TP = 0
+    FP = 0
+    TN = 0
+    FN = 0
+    for i in range(len(y_hat)): 
+        if y_actual[i]==y_hat[i]==1:
+           TP += 1
+        if y_hat[i]==1 and (y_actual[i]!=y_hat[i],):
+           FP += 1
+        if y_actual[i]==y_hat[i]==0:
+           TN += 1
+        if y_hat[i]==0 and (y_actual[i]!=y_hat[i],):
+           FN += 1
+    return(TP, FP, TN, FN)
+
+
+def get_scoring_functions():
+    cfuncs = [accuracy_score, f1_score, jaccard_score, matthews_corrcoef]
+    pfuncs = [brier_score_loss, log_loss, hinge_loss,
+              roc_auc_score, average_precision_score]
+    return cfuncs, pfuncs
+
+
+def get_tuple_cols():
+    cfuncs, pfuncs = get_scoring_functions()
+    return ['model'] + [f.__name__ for f in cfuncs] + [f.__name__ for f in pfuncs]
+
+
+def get_scores(model_name, y_true, y_preds, y_probs):
+    cfuncs, pfuncs = get_scoring_functions()
+
+    cscores = {f.__name__: f(y_true, y_preds) for f in cfuncs}
+    pscores = {f.__name__: f(y_true, y_probs) for f in pfuncs}
+    d = {**cscores, **pscores}
+    d['model'] = model_name
+    return tuple([d[c] for c in get_tuple_cols()])
